@@ -6,7 +6,7 @@
 ###
 
 use strict;
-use Test::More tests => 26;
+use Test::More tests => 27;
 BEGIN { use_ok('XML::SAX::Writer'); }
 
 # default options of XML::SAX::Writer
@@ -83,3 +83,8 @@ my $eq1  = '&lt;&gt;&amp;&quot;&apos;&#45;&#45;';
 my $res1 = $w1->_escape($esc1);
 ok($res1 eq $eq1, 'escaping (default)');
 
+# converting
+my $conv = XML::SAX::Writer::NullConverter->new;
+my $str = 'TEST';
+my $res = $conv->convert($str);
+ok($str eq $res, 'noop converter');

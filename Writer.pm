@@ -13,7 +13,7 @@ use XML::SAX::Exception     qw();
 @XML::SAX::Writer::Exception::ISA = qw(XML::SAX::Exception);
 
 use vars qw($VERSION %DEFAULT_ESCAPE);
-$VERSION = '0.38';
+$VERSION = '0.39';
 %DEFAULT_ESCAPE = (
                     '&'     => '&amp;',
                     '<'     => '&lt;',
@@ -80,7 +80,7 @@ sub start_document {
     }
     elsif (
             $ref eq 'GLOB'                                or
-            UNIVERSAL::isa($self->{Output}, 'GLOB')       or
+            UNIVERSAL::isa(\$self->{Output}, 'GLOB')      or
             UNIVERSAL::isa($self->{Output}, 'IO::Handle')) {
         $self->{Consumer} = XML::SAX::Writer::HandleConsumer->new($self->{Output});
     }
@@ -763,7 +763,7 @@ sub finalize {
 
 package XML::SAX::Writer::NullConverter;
 sub new     { return bless [], __PACKAGE__ }
-sub convert {}
+sub convert { $_[1] }
 
 
 1;
