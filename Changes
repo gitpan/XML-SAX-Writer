@@ -1,5 +1,15 @@
 
 Revision history for XML::SAX::Writer:
 
+0.37 wed 20020116 16:11:15
+    - on Solaris it would seem that iconv has problems converting an encoding
+    to itself (at least, utf-8 to utf-8). Given that this is a useless 
+    operation, it is now detected and replaced with a noop (thanks to
+    David N. Blank-Edelman for reporting this).
+
+0.02 - 0.36
+    - many bugfixes thanks to many helpful people, notably Barrie Slaymaker, 
+    Dave Rolsky, Sean M. Burke, and others.
+
 0.01  mon 20011126 02:31:58
 	- original version

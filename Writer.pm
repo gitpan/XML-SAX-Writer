@@ -2,7 +2,6 @@
 ###
 # XML::SAX::Writer - SAX2 XML Writer
 # Robin Berjon <robin@knowscape.com>
-# 27/11/2001 - v0.20
 # 26/11/2001 - v0.01
 ###
 
@@ -14,7 +13,7 @@ use XML::SAX::Exception     qw();
 @XML::SAX::Writer::Exception::ISA = qw(XML::SAX::Exception);
 
 use vars qw($VERSION %DEFAULT_ESCAPE);
-$VERSION = '0.36';
+$VERSION = '0.37';
 %DEFAULT_ESCAPE = (
                     '&'     => '&amp;',
                     '<'     => '&lt;',
@@ -55,7 +54,12 @@ sub start_document {
     my $self = shift;
 
     # init the object
-    $self->{Encoder} = Text::Iconv->new($self->{EncodeFrom}, $self->{EncodeTo});
+    if (lc($self->{EncodeFrom}) ne lc($self->{EncodeTo})) {
+        $self->{Encoder} = Text::Iconv->new($self->{EncodeFrom}, $self->{EncodeTo});
+    }
+    else {
+        $self->{Encoder} = XML::SAX::Writer::NullConverter->new;
+    }
 
     $self->{EscaperRegex} = eval 'qr/'                                                .
                             join( '|', map { $_ = "\Q$_\E" } keys %{$self->{Escape}}) .
@@ -747,6 +751,16 @@ sub finalize {
     return 0;
 }
 #-------------------------------------------------------------------#
+
+
+#,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,#
+#`,`, Noop Converter ,`,`,`,`,`,`,`,`,`,`,`,`,`,`,`,`,`,`,`,`,`,`,`,#
+#```````````````````````````````````````````````````````````````````#
+
+package XML::SAX::Writer::NullConverter;
+sub new     { return bless [], __PACKAGE__ }
+sub convert {}
+
 
 1;
 #,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,#

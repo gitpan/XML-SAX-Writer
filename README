@@ -9,9 +9,12 @@ XML::SAX::Writer - SAX2 XML Writer
 
   $d->parse('some options...');
 
-This module is still considered alpha, though it has been put to
-limited used. It will exit alpha stage once I'm done writing
-a good test suite for it. It will exit beta stage once I have
-added the formatting options.
+This module is still considered alpha. I haven't had time to write a good
+test suite for it, and until that changes (hopefully soon) I will keep
+considering it alpha status (and so should you ;).
+
+Once that happens, I will start adding formatting options on the XML that it
+produces.
+ 
 
 Robin Berjon <robin@knowscape.com>
