@@ -1,6 +1,10 @@
 
 Revision history for XML::SAX::Writer:
 
+0.42 - thu 20020801 17:17
+    - fixed a serious bug in StringConsumer, thanks to help from Barrie
+      Slaymaker, Adam Turoff, and Eric Cholet.
+
 0.40 - 0.41 sat 20020706 18:01
     - implemented the subclassable SAX writing framework
     - documented the converter API
