@@ -1,0 +1,17 @@
+
+XML::SAX::Writer - SAX2 XML Writer
+
+  use XML::SAX::Writer;
+  use XML::SAX::SomeDriver;
+
+  my $w = XML::SAX::Writer->new;
+  my $d = XML::SAX::SomeDriver->new(Handler => $w);
+
+  $d->parse('some options...');
+
+This module is still considered alpha, though it has been put to
+limited used. It will exit alpha stage once I'm done writing
+a good test suite for it. It will exit beta stage once I have
+added the formatting options.
+
+Robin Berjon <robin@knowscape.com>

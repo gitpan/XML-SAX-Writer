@@ -14,7 +14,7 @@ use XML::SAX::Exception     qw();
 @XML::SAX::Writer::Exception::ISA = qw(XML::SAX::Exception);
 
 use vars qw($VERSION %DEFAULT_ESCAPE);
-$VERSION = '0.20';
+$VERSION = '0.35';
 %DEFAULT_ESCAPE = (
                     '&'     => '&amp;',
                     '<'     => '&lt;',
@@ -23,26 +23,6 @@ $VERSION = '0.20';
                     "'"     => '&apos;',
                     '--'    => '&#45;&#45;',
                   );
-
-
-# NOTES
-#   I think that the quote character should be an option between '
-#   and " (checked for sanity). It currently uses the far superior ',
-#   but given that I'm the only person in the qwerty world sane enough
-#   to use that by default (hey, it's one less Shift key to hit) I
-#   guess that providing the option would be nice.
-#
-#   The pretty printing could perhaps be better expressed as a filter
-#   which would be returned instead of the handler, and fire off the
-#   appropriate events. This would have the cool advantage that people
-#   would easily be able to add their own pretty printing filters by
-#   subclassing the provided one.
-#
-#   plug the Encoder so that it uses Encode from 5.7 up, and Text::Iconv
-#   otherwise (require the dependency in the Makefile.PL directly)
-#   baud suggests: eval { require Encode; } if ($@) {eval {require Text::Iconv; }}
-#   Encode is supposed much superior
-
 
 
 #-------------------------------------------------------------------#
@@ -57,7 +37,7 @@ sub new {
     $opt->{EncodeFrom}  ||= 'utf-8';
     $opt->{EncodeTo}    ||= 'utf-8';
     $opt->{Format}      ||= {}; # needs options w/ defaults, we'll see later
-    $opt->{Output}      ||= \*STDOUT;
+    $opt->{Output}      ||= *{STDOUT}{IO};
 
     return bless $opt, $class;
 }
@@ -87,19 +67,20 @@ sub start_document {
 
 
     # create the Consumer
-    if (ref $self->{Output} eq 'SCALAR') {
+    my $ref = ref $self->{Output};
+    if ($ref eq 'SCALAR') {
         $self->{Consumer} = XML::SAX::Writer::StringConsumer->new($self->{Output});
     }
-    elsif (ref $self->{Output} eq 'ARRAY') {
+    elsif ($ref eq 'ARRAY') {
         $self->{Consumer} = XML::SAX::Writer::ArrayConsumer->new($self->{Output});
     }
-    elsif (ref $self->{Output} eq 'IO') {
+    elsif ($ref eq 'GLOB' or UNIVERSAL::isa($self->{Output}, 'IO::Handle')) {
         $self->{Consumer} = XML::SAX::Writer::HandleConsumer->new($self->{Output});
     }
-    elsif (not ref $self->{Output}) {
+    elsif (not $ref) {
         $self->{Consumer} = XML::SAX::Writer::FileConsumer->new($self->{Output});
     }
-    elsif (ref $self->{Output}) {
+    elsif (UNIVERSAL::can($self->{Output}, 'output')) {
         $self->{Consumer} = $self->{Output};
     }
     else {
@@ -142,6 +123,10 @@ sub start_element {
         $data->{Prefix} = '';
     }
 
+    # create a hash containing the attributes so that we can ensure there is
+    # no duplication. Also, we check that ns are properly declared, that the
+    # Name is good, etc...
+    my %attr_hash;
     for my $at (values %$attr) {
         if ($at->{NamespaceURI}) {
             my $uri = $self->{NSHelper}->getURI($at->{Prefix});
@@ -154,30 +139,23 @@ sub start_element {
             $at->{Name}   = $at->{LocalName};
             $at->{Prefix} = '';
         }
+        $attr_hash{$at->{Name}} = $at->{Value};
     }
 
-
-    # grab the NSDecl, add the appropriate attributes, and reset it
     for my $nd (@{$self->{NSDecl}}) {
         if ($nd->{Prefix}) {
-            $attr->{'{}xmlns:' . $nd->{Prefix}} = {
-                                                    Name    => 'xmlns:' . $nd->{Prefix},
-                                                    Value   => $nd->{NamespaceURI},
-                                                  };
+            $attr_hash{'xmlns:' . $nd->{Prefix}} = $nd->{NamespaceURI};
         }
         else {
-            $attr->{'{}xmlns'} = {
-                                    Name    => 'xmlns',
-                                    Value   => $nd->{NamespaceURI},
-                                 };
+            $attr_hash{'xmlns'} = $nd->{NamespaceURI};
         }
     }
     $self->{NSDecl} = [];
 
     # build a string from what we have, and buffer it
     my $el = '<' . $data->{Name};
-    for my $at (values %$attr) {
-        $el .= ' ' . $at->{Name} . '=\'' . $self->_escape($at->{Value}) . '\'';
+    for my $k (keys %attr_hash) {
+        $el .= ' ' . $k . '=\'' . $self->_escape($attr_hash{$k}) . '\'';
     }
 
     $self->{BufferElement} = $el;
@@ -639,7 +617,7 @@ sub new {
     my $class = ref($_[0]) ? ref(shift) : shift;
     my $str   = shift;
     $$str = '';
-    return bless $str, $class;
+    return bless [$str], $class;
 }
 #-------------------------------------------------------------------#
 
@@ -649,14 +627,14 @@ sub new {
 sub output {
     my $self = shift;
     my $data = shift;
-    $$self .= $data;
+    ${$self->[0]} .= $data;
 }
 #-------------------------------------------------------------------#
 
 #-------------------------------------------------------------------#
 # finalize
 #-------------------------------------------------------------------#
-sub finalize { return $_[0]; }
+sub finalize { return $_[0]->[0]; }
 #-------------------------------------------------------------------#
 
 
@@ -674,7 +652,7 @@ sub new {
     my $class = ref($_[0]) ? ref(shift) : shift;
     my $arr   = shift;
     @$arr = ();
-    return bless $arr, $class;
+    return bless [$arr], $class;
 }
 #-------------------------------------------------------------------#
 
@@ -684,14 +662,14 @@ sub new {
 sub output {
     my $self = shift;
     my $data = shift;
-    push @$self, $data;
+    push @{$self->[0]}, $data;
 }
 #-------------------------------------------------------------------#
 
 #-------------------------------------------------------------------#
 # finalize
 #-------------------------------------------------------------------#
-sub finalize { return $_[0]; }
+sub finalize { return $_[0]->[0]; }
 #-------------------------------------------------------------------#
 
 
@@ -708,7 +686,7 @@ use base qw(XML::SAX::Writer::ConsumerInterface);
 sub new {
     my $class = ref($_[0]) ? ref(shift) : shift;
     my $fh    = shift;
-    return bless $fh, $class;
+    return bless [$fh], $class;
 }
 #-------------------------------------------------------------------#
 
@@ -718,7 +696,7 @@ sub new {
 sub output {
     my $self = shift;
     my $data = shift;
-    push @$self, $data;
+    print $self->[0], $data;
 }
 #-------------------------------------------------------------------#
 
@@ -727,7 +705,7 @@ sub output {
 #-------------------------------------------------------------------#
 sub finalize {
     my $self = shift;
-    close $self;
+#    close $self;
     return 0;
 }
 #-------------------------------------------------------------------#
@@ -739,19 +717,35 @@ sub finalize {
 
 package XML::SAX::Writer::FileConsumer;
 use base qw(XML::SAX::Writer::HandleConsumer);
+#use Symbol  qw();
 
 #-------------------------------------------------------------------#
 # new
 #-------------------------------------------------------------------#
 sub new {
     my $class = ref($_[0]) ? ref(shift) : shift;
-    my $file  = shift;
-
-    open XFH, $file or XML::SAX::Writer::Exception->throw({ Message => "Error opening file $file: $!" });
+    my $file  = shift or XML::SAX::Writer::Exception->throw({
+                            Message => "No filename provided to XML::SAX::Writer::FileConsumer"
+                                                            });
+#    my $sym = Symbol::gensym;
+    local *XFH;
+    open XFH, ">$file" or XML::SAX::Writer::Exception->throw({
+                                    Message => "Error opening file $file: $!"
+                                                            });
     return SUPER->new(\*XFH);
+#    return SUPER->new(\*$sym);
 }
 #-------------------------------------------------------------------#
 
+#-------------------------------------------------------------------#
+# finalize
+#-------------------------------------------------------------------#
+sub finalize {
+    my $self = shift;
+    close $self->[0];
+    return 0;
+}
+#-------------------------------------------------------------------#
 
 1;
 #,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,#
@@ -772,7 +766,7 @@ XML::SAX::Writer - SAX2 XML Writer
   my $w = XML::SAX::Writer->new;
   my $d = XML::SAX::SomeDriver->new(Handler => $w);
 
-  $p->parse('some options...');
+  $d->parse('some options...');
 
 =head1 DESCRIPTION
 
@@ -797,6 +791,57 @@ So in the end there was a new writer. I think it's in fact better this
 way as it helps keep SAX1 and SAX2 separated.
 
 =head1 METHODS
+
+=over 4
+
+=item * new(%hash)
+
+This is the constructor for this object.  It takes a number of
+parameters, all of which are optional.
+
+=item -- Output
+
+This parameter can be one of several things.  If it is a simple
+scalar, it is interpreted as a filename which will be opened for
+writing.  If it is a scalar reference, output will be appended to this
+scalar.  If it is an array reference, output will be pushed onto this
+array as it is generated.  If it is a filehandle, then output will be
+sent to this filehandle.
+
+Finally, it is possible to pass an object for this parameter, in which
+case it is assumed to be an object that implements the consumer
+interface L<described later in the documentation|/THE CONSUMER
+INTERFACE>.
+
+If this parameter is not provided, then output is sent to STDOUT.
+
+=item -- Escape
+
+This should be a hash reference where the keys are characters
+sequences that should be escaped and the values are the escaped form
+of the sequence.  By default, this module will escape the ampersand
+(&), less than (<), greater than (>), double quote ("), apostrophe
+('), and double dash (--) character sequences. Note that the double
+dash escape is needed for comments, and that some browsers don't
+support the &apos; escape used for apostrophes so that you should
+be careful when outputting XHTML.
+
+If you only want to add entries to the Escape hash, you can first
+copy the contents of %XML::SAX::Writer::DEFAULT_ESCAPE.
+
+=item -- EncodeFrom
+
+The character set encoding in which incoming data will be provided.
+This defaults to UTF-8, which works for US-ASCII as well.
+
+=item -- EncodeTo
+
+The character set encoding in which output should be encoded.  Again,
+this defaults to UTF-8.
+
+=back
+
+=head1 GENERATING XML
 
 =head1 THE CONSUMER INTERFACE
 
@@ -837,6 +882,26 @@ you need to provide feedback of some sort.
 
 =back
 
+=head1 TODO
+
+    - make the quote character an option. By default it is here ', but
+    I know that a lot of people (for reasons I don't understand but
+    won't question :-) prefer to use ". (on most keyboards " is more
+    typing, on the rest it's often as much typing).
+
+    - the formatting options need to be developed.
+
+    - test, test, test (and then some tests)
+
+    - doc, doc, doc (actually this part is in better shape)
+
+    - add support for Perl 5.7's Encode module so that we can use it
+    instead of Text::Iconv. Encode is more complete and likely to be
+    better supported overall. This will be done using a pluggable
+    encoder (so that users can provide their own if they want to)
+    and detecter both in Makefile.PL requirements and in the module
+    at runtime.
+
 =head1 CREDITS
 
 Michael Koehne (XML::Handler::YAWriter) for much inspiration and
@@ -858,3 +923,4 @@ terms as Perl itself.
 XML::SAX::*
 
 =cut
+
