@@ -7,7 +7,8 @@ WriteMakefile(
     'ABSTRACT'      => 'SAX2 XML Writer',
     'PREREQ_PM'     => {
                         Text::Iconv             => '1.2',
-                        XML::SAX::Exception     => '1.00',
+                        XML::SAX::Exception     => '1.01',
                         XML::NamespaceSupport   => '0.03',
+                        Test::More              => '0.00',
                        },
 );

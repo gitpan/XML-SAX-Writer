@@ -13,7 +13,7 @@ use XML::SAX::Exception     qw();
 @XML::SAX::Writer::Exception::ISA = qw(XML::SAX::Exception);
 
 use vars qw($VERSION %DEFAULT_ESCAPE);
-$VERSION = '0.37';
+$VERSION = '0.38';
 %DEFAULT_ESCAPE = (
                     '&'     => '&amp;',
                     '<'     => '&lt;',
@@ -78,7 +78,10 @@ sub start_document {
     elsif ($ref eq 'ARRAY') {
         $self->{Consumer} = XML::SAX::Writer::ArrayConsumer->new($self->{Output});
     }
-    elsif ($ref eq 'GLOB' or UNIVERSAL::isa($self->{Output}, 'IO::Handle')) {
+    elsif (
+            $ref eq 'GLOB'                                or
+            UNIVERSAL::isa($self->{Output}, 'GLOB')       or
+            UNIVERSAL::isa($self->{Output}, 'IO::Handle')) {
         $self->{Consumer} = XML::SAX::Writer::HandleConsumer->new($self->{Output});
     }
     elsif (not $ref) {
@@ -701,7 +704,7 @@ sub output {
     my $self = shift;
     my $data = shift;
     my $fh = $self->[0];
-    print $fh $data or XML::SAX::Exception->throw( Message => "Could not write to handle: $fh" );
+    print $fh $data or XML::SAX::Exception->throw( Message => "Could not write to handle: $fh ($!)" );
 }
 #-------------------------------------------------------------------#
 
@@ -737,7 +740,8 @@ sub new {
     open XFH, ">$file" or XML::SAX::Writer::Exception->throw(
                                     Message => "Error opening file $file: $!"
                                                             );
-    return SUPER->new(\*XFH);
+    my $self = XML::SAX::Writer::HandleConsumer->new(*{XFH}{IO});
+    return bless $self, $class;
 #    return SUPER->new(\*$sym);
 }
 #-------------------------------------------------------------------#
@@ -929,7 +933,7 @@ Robin Berjon, robin@knowscape.com
 
 =head1 COPYRIGHT
 
-Copyright (c) 2001 Robin Berjon. All rights reserved. This program is
+Copyright (c) 2001,2002 Robin Berjon. All rights reserved. This program is
 free software; you can redistribute it and/or modify it under the same
 terms as Perl itself.
 

@@ -1,9 +1,85 @@
 
-# better tests will be devised later, probably using diffing techiniques
+###
+# XML::SAX::Writer tests
+# Robin Berjon <robin@knowscape.com>
+# 06/01/2002 - v0.01
+###
 
-BEGIN { $| = 1; print "1..1\n"; }
-END {print "not ok 1\n" unless $loaded;}
-use XML::SAX::Writer;
-$loaded = 1;
-print "ok 1\n";
+use strict;
+use Test::More tests => 26;
+BEGIN { use_ok('XML::SAX::Writer'); }
+
+# default options of XML::SAX::Writer
+my $w1 = XML::SAX::Writer->new;
+ok(        $w1->{EncodeFrom} eq 'utf-8',                       'default EncodeFrom');
+ok(        $w1->{EncodeTo}   eq 'utf-8',                       'default EncodeTo');
+isa_ok(    $w1->{Output},  'IO::Handle',                       'default Output');
+is_deeply( $w1->{Format},  {},                                 'default Format');
+is_deeply( $w1->{Escape},  \%XML::SAX::Writer::DEFAULT_ESCAPE, 'default Escape');
+
+
+# set default options of XML::SAX::Writer
+my %fmt2 = ( FooBar => 1 );
+my $o2 = \'';
+my $w2 = XML::SAX::Writer->new({
+                                EncodeFrom  => 'iso-8859-1',
+                                EncodeTo    => 'iso-8859-2',
+                                Output      => $o2,
+                                Format      => \%fmt2,
+                                Escape      => {},
+                              });
+ok(        $w2->{EncodeFrom} eq 'iso-8859-1', 'set EncodeFrom');
+ok(        $w2->{EncodeTo}   eq 'iso-8859-2', 'set EncodeTo');
+ok(        "$w2->{Output}"   eq  "$o2",       'set Output');
+is_deeply( $w2->{Format},   \%fmt2,           'set Format');
+is_deeply( $w2->{Escape},   {},               'set Escape');
+
+
+# options after initialisation
+$w1->start_document;
+isa_ok($w1->{Encoder},  'XML::SAX::Writer::NullConverter', 'null converter for noop encoding');
+isa_ok($w1->{NSHelper}, 'XML::NamespaceSupport',           'ns support');
+ok(ref($w1->{EscaperRegex}) eq 'Regexp',                    'escaper regex');
+ok(ref($w1->{NSDecl})       eq 'ARRAY',                    'ns stack');
+ok(@{$w1->{NSDecl}} == 0,                                  'ns stack is clear');
+isa_ok($w1->{Consumer}, 'XML::SAX::Writer::ConsumerInterface', 'consumer is set');
+
+# different inits (mostly for Consumer DWIM)
+$w1->{EncodeFrom} = 'iso-8859-1';
+$w1->start_document;
+isa_ok($w1->{Encoder}, 'Text::Iconv', 'iconv converter for real encoding');
+
+$w1->{Output} = 'test_file_for_output';
+$w1->start_document;
+isa_ok($w1->{Consumer}, 'XML::SAX::Writer::FileConsumer',   'consumer is FileConsumer');
+
+my $ot = '';
+$w1->{Output} = \$ot;
+$w1->start_document;
+isa_ok($w1->{Consumer}, 'XML::SAX::Writer::StringConsumer', 'consumer is StringConsumer');
+
+$w1->{Output} = [];
+$w1->start_document;
+isa_ok($w1->{Consumer}, 'XML::SAX::Writer::ArrayConsumer',  'consumer is ArrayConsumer');
+
+$w1->{Output} = *STDOUT;
+$w1->start_document;
+isa_ok($w1->{Consumer}, 'XML::SAX::Writer::HandleConsumer', 'consumer is HandleConsumer');
+
+$w1->{Output} = bless [], 'Test__XSW1';
+sub Test__XSW1::output {}
+$w1->start_document;
+isa_ok($w1->{Consumer}, 'Test__XSW1',                       'consumer is custom');
+
+$w1->{Output} = bless [], 'Test__XSW2';
+eval { $w1->start_document; };
+ok($@, 'bad consumer');
+isa_ok($@, 'XML::SAX::Writer::Exception', 'bad consumer exception');
+
+
+# escaping
+my $esc1 = '<>&"\'--';
+my $eq1  = '&lt;&gt;&amp;&quot;&apos;&#45;&#45;';
+my $res1 = $w1->_escape($esc1);
+ok($res1 eq $eq1, 'escaping (default)');
 
