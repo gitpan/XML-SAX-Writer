@@ -14,7 +14,7 @@ use XML::SAX::Exception     qw();
 @XML::SAX::Writer::Exception::ISA = qw(XML::SAX::Exception);
 
 use vars qw($VERSION %DEFAULT_ESCAPE);
-$VERSION = '0.35';
+$VERSION = '0.36';
 %DEFAULT_ESCAPE = (
                     '&'     => '&amp;',
                     '<'     => '&lt;',
@@ -84,7 +84,7 @@ sub start_document {
         $self->{Consumer} = $self->{Output};
     }
     else {
-        XML::SAX::Writer::Exception->throw({ Message => 'Unknown option for Output' });
+        XML::SAX::Writer::Exception->throw( Message => 'Unknown option for Output' );
     }
 }
 #-------------------------------------------------------------------#
@@ -696,7 +696,8 @@ sub new {
 sub output {
     my $self = shift;
     my $data = shift;
-    print $self->[0], $data;
+    my $fh = $self->[0];
+    print $fh $data or XML::SAX::Exception->throw( Message => "Could not write to handle: $fh" );
 }
 #-------------------------------------------------------------------#
 
@@ -724,14 +725,14 @@ use base qw(XML::SAX::Writer::HandleConsumer);
 #-------------------------------------------------------------------#
 sub new {
     my $class = ref($_[0]) ? ref(shift) : shift;
-    my $file  = shift or XML::SAX::Writer::Exception->throw({
+    my $file  = shift or XML::SAX::Writer::Exception->throw(
                             Message => "No filename provided to XML::SAX::Writer::FileConsumer"
-                                                            });
+                                                            );
 #    my $sym = Symbol::gensym;
     local *XFH;
-    open XFH, ">$file" or XML::SAX::Writer::Exception->throw({
+    open XFH, ">$file" or XML::SAX::Writer::Exception->throw(
                                     Message => "Error opening file $file: $!"
-                                                            });
+                                                            );
     return SUPER->new(\*XFH);
 #    return SUPER->new(\*$sym);
 }
