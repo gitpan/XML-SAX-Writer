@@ -13,7 +13,7 @@ use XML::Filter::BufferText qw();
 @XML::SAX::Writer::Exception::ISA = qw(XML::SAX::Exception);
 
 use vars qw($VERSION %DEFAULT_ESCAPE %COMMENT_ESCAPE);
-$VERSION = '0.42';
+$VERSION = '0.44';
 
 %DEFAULT_ESCAPE = (
                     '&'     => '&amp;',
@@ -95,7 +95,7 @@ sub setConsumer {
         $self->{Consumer} = XML::SAX::Writer::ArrayConsumer->new($self->{Output});
     }
     elsif (
-#            $ref eq 'GLOB'                                or
+            $ref eq 'GLOB'                                or
             UNIVERSAL::isa(\$self->{Output}, 'GLOB')      or
             UNIVERSAL::isa($self->{Output}, 'IO::Handle')) {
         $self->{Consumer} = XML::SAX::Writer::HandleConsumer->new($self->{Output});
@@ -610,8 +610,6 @@ than those that apply to regular content.
 
     - proper UTF-16 handling
 
-    - deprecation of xml_decl and addition of the logic to replace it
-
     - make the quote character an option. By default it is here ', but
     I know that a lot of people (for reasons I don't understand but
     won't question :-) prefer to use ". (on most keyboards " is more
@@ -632,6 +630,11 @@ than those that apply to regular content.
 
     - remove the xml_decl and replace it with intelligent logic, as
     discussed on perl-xml
+
+    - make a the Consumer selecting code available in the API, to avoid
+    duplicating
+
+    - add an Apache output Consumer, triggered by passing $r as Output
 
 =head1 CREDITS
 

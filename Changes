@@ -1,6 +1,12 @@
 
 Revision history for XML::SAX::Writer:
 
+0.43 - 0.44 fri 20020906 18:27
+    - made the basic tests work again despite the fact we now return
+      a BufferText object
+    - fixed a bug reported by Grant that prevented proper use of 
+      output FH under some conditions.
+
 0.42 - thu 20020801 17:17
     - fixed a serious bug in StringConsumer, thanks to help from Barrie
       Slaymaker, Adam Turoff, and Eric Cholet.

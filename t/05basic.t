@@ -6,17 +6,12 @@
 ###
 
 use strict;
-use Test::More tests => 1;
+use Test::More tests => 27;
 BEGIN { use_ok('XML::SAX::Writer'); }
-
-__END__
-
-Reimplementation with a new approach has wrecked the tests...
-
 
 
 # default options of XML::SAX::Writer
-my $w1 = XML::SAX::Writer->new;
+my $w1 = XML::SAX::Writer->new->{Handler};
 ok(        $w1->{EncodeFrom} eq 'utf-8',                       'default EncodeFrom');
 ok(        $w1->{EncodeTo}   eq 'utf-8',                       'default EncodeTo');
 isa_ok(    $w1->{Output},  'IO::Handle',                       'default Output');
@@ -33,7 +28,7 @@ my $w2 = XML::SAX::Writer->new({
                                 Output      => $o2,
                                 Format      => \%fmt2,
                                 Escape      => {},
-                              });
+                              })->{Handler};
 ok(        $w2->{EncodeFrom} eq 'iso-8859-1', 'set EncodeFrom');
 ok(        $w2->{EncodeTo}   eq 'iso-8859-2', 'set EncodeTo');
 ok(        "$w2->{Output}"   eq  "$o2",       'set Output');
@@ -84,9 +79,9 @@ isa_ok($@, 'XML::SAX::Writer::Exception', 'bad consumer exception');
 
 
 # escaping
-my $esc1 = '<>&"\'--';
-my $eq1  = '&lt;&gt;&amp;&quot;&apos;&#45;&#45;';
-my $res1 = $w1->_escape($esc1);
+my $esc1 = '<>&"\'';
+my $eq1  = '&lt;&gt;&amp;&quot;&apos;';
+my $res1 = $w1->escape($esc1);
 ok($res1 eq $eq1, 'escaping (default)');
 
 # converting
