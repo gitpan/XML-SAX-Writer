@@ -1,6 +1,34 @@
 
 Revision history for XML::SAX::Writer:
 
+0.40 - 0.41 sat 20020706 18:01
+    - implemented the subclassable SAX writing framework
+    - documented the converter API
+    - made comments be escaped differently
+    - fixed doctype writing (Michel Rodriguez)
+    - fixed a warning (Joshua Keroes)
+    - requires correct version of Test::More (Richard Dice)
+    - fixed CDATA escaping
+    - we return a BufferText object now, to make sure that multiple
+      charater escapes work
+    - lots of stuff thanks to Barrie Slaymaker:
+        - Rewrite of all consumers to be smaller and faster.
+        - XML::SAX::Writer::ConsumerInterface::new is now a real
+          constructor which all derived classes should call.
+        - finalize is now not called unless it exists.
+        - A file name of "0" will not cause an exception.
+        - One error message now reports the package name properly if
+          it was subclassed.
+        - base.pm is no longer used.
+        - the test suite runs events through Writer and in to
+          CodeConsumer and a custom consumer.
+        - Custom consumers are better documented (barries).
+
+0.39 wed 20020116 22:15:41
+    - fixed an FH problem (Dave Rolsky)
+    - the null converter was so null that it converted strings to nothing
+    (Graham Barr)
+
 0.38 wed 20020116 21:41:41
     - several major bugfixes that prevented some consumers (mostly Handle and
     File) from working at all.

@@ -9,6 +9,7 @@ WriteMakefile(
                         Text::Iconv             => '1.2',
                         XML::SAX::Exception     => '1.01',
                         XML::NamespaceSupport   => '0.03',
-                        Test::More              => '0.00',
+                        Test::More              => '0.40',
+                        XML::Filter::BufferText => '0.01',
                        },
 );

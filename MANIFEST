@@ -5,3 +5,4 @@ README
 t/05basic.t
 t/10consumers.t
 Writer.pm
+lib/XML/SAX/Writer/XML.pm
