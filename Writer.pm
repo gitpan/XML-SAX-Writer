@@ -2,7 +2,8 @@
 ###
 # XML::SAX::Writer - SAX2 XML Writer
 # Robin Berjon <robin@knowscape.com>
-# 26/11/2001 - v.0.02
+# 27/11/2001 - v0.20
+# 26/11/2001 - v0.01
 ###
 
 package XML::SAX::Writer;
@@ -13,7 +14,7 @@ use XML::SAX::Exception     qw();
 @XML::SAX::Writer::Exception::ISA = qw(XML::SAX::Exception);
 
 use vars qw($VERSION %DEFAULT_ESCAPE);
-$VERSION = '0.02';
+$VERSION = '0.20';
 %DEFAULT_ESCAPE = (
                     '&'     => '&amp;',
                     '<'     => '&lt;',
@@ -36,6 +37,12 @@ $VERSION = '0.02';
 #   appropriate events. This would have the cool advantage that people
 #   would easily be able to add their own pretty printing filters by
 #   subclassing the provided one.
+#
+#   plug the Encoder so that it uses Encode from 5.7 up, and Text::Iconv
+#   otherwise (require the dependency in the Makefile.PL directly)
+#   baud suggests: eval { require Encode; } if ($@) {eval {require Text::Iconv; }}
+#   Encode is supposed much superior
+
 
 
 #-------------------------------------------------------------------#
@@ -239,6 +246,7 @@ sub processing_instruction {
     my $self = shift;
     my $data = shift;
     $self->_output_element;
+    $self->_output_dtd;
 
     my $pi = "<?$data->{Target} $data->{Data}?>";
     $pi = $self->{Encoder}->convert($pi);
@@ -267,8 +275,20 @@ sub ignorable_whitespace {
 sub skipped_entity {
     my $self = shift;
     my $data = shift;
-    $self->_output_element; # needed ???
-    warn "[XML::SAX::Writer] this SAX event hasn't been implemented yet\n";
+    $self->_output_element;
+    $self->_output_dtd;
+
+    my $ent;
+    if ($data->{Name} =~ m/^%/) {
+        $ent = $data->{Name} . ';';
+    }
+    else {
+        $ent = '&' . $data->{Name} . ';';
+    }
+
+    $ent = $self->{Encoder}->convert($ent);
+    $self->{Consumer}->output($ent);
+
 }
 #-------------------------------------------------------------------#
 
@@ -278,7 +298,23 @@ sub skipped_entity {
 sub notation_decl {
     my $self = shift;
     my $data = shift;
-    warn "[XML::SAX::Writer] this SAX event hasn't been implemented yet\n";
+    $self->_output_dtd;
+
+    # I think that param entities are normalized before this
+    my $not = "    <!NOTATION " . $data->{Name};
+    if ($data->{PublicId} and $data->{SystemId}) {
+        $not .= ' PUBLIC \'' . $self->_escape($data->{PublicId}) . '\' \'' . $self->_escape($data->{SystemId}) . '\'';
+    }
+    elsif ($data->{PublicId}) {
+        $not .= ' PUBLIC \'' . $self->_escape($data->{PublicId}) . '\'';
+    }
+    else {
+        $not .= ' SYSTEM \'' . $self->_escape($data->{SystemId}) . '\'';
+    }
+    $not .= " >\n";
+
+    $not = $self->{Encoder}->convert($not);
+    $self->{Consumer}->output($not);
 }
 #-------------------------------------------------------------------#
 
@@ -288,7 +324,21 @@ sub notation_decl {
 sub unparsed_entity_decl {
     my $self = shift;
     my $data = shift;
-    warn "[XML::SAX::Writer] this SAX event hasn't been implemented yet\n";
+    $self->_output_dtd;
+
+    # I think that param entities are normalized before this
+    my $ent = "    <!ENTITY " . $data->{Name};
+    if ($data->{PublicId}) {
+        $ent .= ' PUBLIC \'' . $self->_escape($data->{PublicId}) . '\' \'' . $self->_escape($data->{SystemId}) . '\'';
+    }
+    else {
+        $ent .= ' SYSTEM \'' . $self->_escape($data->{SystemId}) . '\'';
+    }
+    $ent .= " NDATA $data->{Notation} >\n";
+
+
+    $ent = $self->{Encoder}->convert($ent);
+    $self->{Consumer}->output($ent);
 }
 #-------------------------------------------------------------------#
 
@@ -298,7 +348,12 @@ sub unparsed_entity_decl {
 sub element_decl {
     my $self = shift;
     my $data = shift;
-    warn "[XML::SAX::Writer] this SAX event hasn't been implemented yet\n";
+    $self->_output_dtd;
+
+    # I think that param entities are normalized before this
+    my $eld = "    <!ELEMENT " . $data->{Name} . ' ' . $data->{Model} . " >\n";
+    $eld = $self->{Encoder}->convert($eld);
+    $self->{Consumer}->output($eld);
 }
 #-------------------------------------------------------------------#
 
@@ -308,7 +363,15 @@ sub element_decl {
 sub attribute_decl {
     my $self = shift;
     my $data = shift;
-    warn "[XML::SAX::Writer] this SAX event hasn't been implemented yet\n";
+    $self->_output_dtd;
+
+    # I think that param entities are normalized before this
+    my $atd = "      <!ATTLIST " . $data->{eName} . ' ' . $data->{aName} . ' ';
+    $atd   .= $data->{Type} . ' ' . $data->{ValueDefault} . ' ';
+    $atd   .= $data->{Value} . ' ' if $data->{Value};
+    $atd   .= " >\n";
+    $atd = $self->{Encoder}->convert($atd);
+    $self->{Consumer}->output($atd);
 }
 #-------------------------------------------------------------------#
 
@@ -318,7 +381,12 @@ sub attribute_decl {
 sub internal_entity_decl {
     my $self = shift;
     my $data = shift;
-    warn "[XML::SAX::Writer] this SAX event hasn't been implemented yet\n";
+    $self->_output_dtd;
+
+    # I think that param entities are normalized before this
+    my $ent = "    <!ENTITY " . $data->{Name} . ' \'' . $self->_escape($data->{Value}) . "' >\n";
+    $ent = $self->{Encoder}->convert($ent);
+    $self->{Consumer}->output($ent);
 }
 #-------------------------------------------------------------------#
 
@@ -328,7 +396,21 @@ sub internal_entity_decl {
 sub external_entity_decl {
     my $self = shift;
     my $data = shift;
-    warn "[XML::SAX::Writer] this SAX event hasn't been implemented yet\n";
+    $self->_output_dtd;
+
+    # I think that param entities are normalized before this
+    my $ent = "    <!ENTITY " . $data->{Name};
+    if ($data->{PublicId}) {
+        $ent .= ' PUBLIC \'' . $self->_escape($data->{PublicId}) . '\' \'' . $self->_escape($data->{SystemId}) . '\'';
+    }
+    else {
+        $ent .= ' SYSTEM \'' . $self->_escape($data->{SystemId}) . '\'';
+    }
+    $ent .= " >\n";
+
+
+    $ent = $self->{Encoder}->convert($ent);
+    $self->{Consumer}->output($ent);
 }
 #-------------------------------------------------------------------#
 
@@ -339,6 +421,7 @@ sub comment {
     my $self = shift;
     my $data = shift;
     $self->_output_element;
+    $self->_output_dtd;
 
     my $cmt = '<!--' . $self->_escape($data->{Data}) . '-->';
     $cmt = $self->{Encoder}->convert($cmt);
@@ -352,7 +435,16 @@ sub comment {
 sub start_dtd {
     my $self = shift;
     my $data = shift;
-    warn "[XML::SAX::Writer] this SAX event hasn't been implemented yet\n";
+
+    my $dtd = '<!DOCTYPE ' . $data->{Name};
+    if ($data->{PublicId}) {
+        $dtd .= ' PUBLIC \'' . $self->_escape($data->{PublicId}) . '\' \'' . $self->_escape($data->{SysmteId}) . '\'';
+    }
+    elsif ($data->{SystemId}) {
+        $dtd .= ' SYSTEM \'' . $self->_escape($data->{SysmteId}) . '\'';
+    }
+
+    $self->{BufferDTD} = $dtd;
 }
 #-------------------------------------------------------------------#
 
@@ -362,7 +454,17 @@ sub start_dtd {
 sub end_dtd {
     my $self = shift;
     my $data = shift;
-    warn "[XML::SAX::Writer] this SAX event hasn't been implemented yet\n";
+
+    my $dtd;
+    if ($self->{BufferDTD}) {
+        $dtd = $self->{BufferDTD} . ' >';
+    }
+    else {
+        $dtd = ' ]>';
+    }
+    $dtd = $self->{Encoder}->convert($dtd);
+    $self->{Consumer}->output($dtd);
+    $self->{BufferDTD} = '';
 }
 #-------------------------------------------------------------------#
 
@@ -397,8 +499,25 @@ sub end_cdata {
 sub start_entity {
     my $self = shift;
     my $data = shift;
-    $self->_output_element; # needed ???
-    warn "[XML::SAX::Writer] this SAX event hasn't been implemented yet\n";
+    $self->_output_element;
+    $self->_output_dtd;
+
+    my $ent;
+    if ($data->{Name} eq '[dtd]') {
+        # we ignore the fact that we're dealing with an external
+        # DTD entity here, and prolly shouldn't write the DTD
+        # events unless explicitly told to
+        # this will prolly change
+    }
+    elsif ($data->{Name} =~ m/^%/) {
+        $ent = $data->{Name} . ';';
+    }
+    else {
+        $ent = '&' . $data->{Name} . ';';
+    }
+
+    $ent = $self->{Encoder}->convert($ent);
+    $self->{Consumer}->output($ent);
 }
 #-------------------------------------------------------------------#
 
@@ -406,10 +525,7 @@ sub start_entity {
 # end_entity
 #-------------------------------------------------------------------#
 sub end_entity {
-    my $self = shift;
-    my $data = shift;
-    $self->_output_element; # needed ???
-    warn "[XML::SAX::Writer] this SAX event hasn't been implemented yet\n";
+    # depending on what is done above, we might need to do sth here
 }
 #-------------------------------------------------------------------#
 
@@ -442,48 +558,6 @@ sub xml_decl {
 }
 #-------------------------------------------------------------------#
 
-#-------------------------------------------------------------------#
-# attlist_decl
-#-------------------------------------------------------------------#
-sub attlist_decl {
-    my $self = shift;
-    my $data = shift;
-    warn "[XML::SAX::Writer] this SAX event hasn't been implemented yet\n";
-}
-#-------------------------------------------------------------------#
-
-#-------------------------------------------------------------------#
-# doctype_decl
-#-------------------------------------------------------------------#
-sub doctype_decl {
-    my $self = shift;
-    my $data = shift;
-    warn "[XML::SAX::Writer] this SAX event hasn't been implemented yet\n";
-}
-#-------------------------------------------------------------------#
-
-#-------------------------------------------------------------------#
-# entity_decl
-#-------------------------------------------------------------------#
-sub entity_decl {
-    my $self = shift;
-    my $data = shift;
-    warn "[XML::SAX::Writer] this SAX event hasn't been implemented yet\n";
-}
-#-------------------------------------------------------------------#
-
-#-------------------------------------------------------------------#
-# entity_reference
-#-------------------------------------------------------------------#
-sub entity_reference {
-    my $self = shift;
-    my $data = shift;
-    $self->_output_element; # needed ???
-    warn "[XML::SAX::Writer] this SAX event hasn't been implemented yet\n";
-}
-#-------------------------------------------------------------------#
-
-
 
 #,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,#
 #`,`, Helpers `,`,`,`,`,`,`,`,`,`,`,`,`,`,`,`,`,`,`,`,`,`,`,`,`,`,`,#
@@ -505,6 +579,21 @@ sub _output_element {
 #-------------------------------------------------------------------#
 
 #-------------------------------------------------------------------#
+# _output_dtd
+#-------------------------------------------------------------------#
+sub _output_dtd {
+    my $self = shift;
+
+    if ($self->{BufferDTD}) {
+        my $dtd = $self->{BufferDTD} . " [\n";
+        $dtd = $self->{Encoder}->convert($dtd);
+        $self->{Consumer}->output($dtd);
+        $self->{BufferDTD} = '';
+    }
+}
+#-------------------------------------------------------------------#
+
+#-------------------------------------------------------------------#
 # _escape
 #-------------------------------------------------------------------#
 sub _escape {
@@ -520,11 +609,28 @@ sub _escape {
 
 
 
+
+
+
+#,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,#
+#`,`, The Empty Consumer ,`,`,`,`,`,`,`,`,`,`,`,`,`,`,`,`,`,`,`,`,`,#
+#```````````````````````````````````````````````````````````````````#
+
+# this package is only there to provide a smooth upgrade path in case
+# new methods are added to the interface
+
+package XML::SAX::Writer::ConsumerInterface;
+sub new {}
+sub output {}
+sub finalize {}
+
+
 #,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,#
 #`,`, The String Consumer `,`,`,`,`,`,`,`,`,`,`,`,`,`,`,`,`,`,`,`,`,#
 #```````````````````````````````````````````````````````````````````#
 
 package XML::SAX::Writer::StringConsumer;
+use base qw(XML::SAX::Writer::ConsumerInterface);
 
 #-------------------------------------------------------------------#
 # new
@@ -559,6 +665,7 @@ sub finalize { return $_[0]; }
 #```````````````````````````````````````````````````````````````````#
 
 package XML::SAX::Writer::ArrayConsumer;
+use base qw(XML::SAX::Writer::ConsumerInterface);
 
 #-------------------------------------------------------------------#
 # new
@@ -593,6 +700,7 @@ sub finalize { return $_[0]; }
 #```````````````````````````````````````````````````````````````````#
 
 package XML::SAX::Writer::HandleConsumer;
+use base qw(XML::SAX::Writer::ConsumerInterface);
 
 #-------------------------------------------------------------------#
 # new
@@ -645,7 +753,6 @@ sub new {
 #-------------------------------------------------------------------#
 
 
-
 1;
 #,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,#
 #`,`, Documentation `,`,`,`,`,`,`,`,`,`,`,`,`,`,`,`,`,`,`,`,`,`,`,`,#
@@ -690,6 +797,45 @@ So in the end there was a new writer. I think it's in fact better this
 way as it helps keep SAX1 and SAX2 separated.
 
 =head1 METHODS
+
+=head1 THE CONSUMER INTERFACE
+
+XML::SAX::Writer can receive pluggable consumer objects that will be
+in charge of writing out the XML formatted by this module. Setting a
+Consumer is done by setting the Output option to the object of your
+choice instead of to an array, scalar, or file handle as is more
+commonly done (internally those in fact map to Consumer classes and
+and simply available as options for your convienience).
+
+If you don't understand this, don't worry. You don't need it most of
+the time.
+
+That object can be from any class, but must have two methods in its
+API. It is also strongly recommended that it inherits from
+XML::SAX::Writer::ConsumerInterface so that it will not break if that
+interface evolves over time. There are examples at the end of
+XML::SAX::Writer's code.
+
+The two methods that it needs to implement are:
+
+=over 4
+
+=item * output(String)
+
+This is called whenever the Writer wants to output a string formatted
+in XML. Encoding conversion, character escaping, and formatting have
+already taken place. It's up to the consumer to do whatever it wants
+with the string.
+
+=item * finalize()
+
+This is called once the document has been output in its entirety,
+during the end_document event. end_document will in fact return
+whatever finalize() returns, and that in turn should be returned
+by parse() for whatever parser was invoked. It might be useful if
+you need to provide feedback of some sort.
+
+=back
 
 =head1 CREDITS
 
