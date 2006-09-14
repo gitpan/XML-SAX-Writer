@@ -1,0 +1,15 @@
+# http://module-build.sourceforge.net/META-spec.html
+#XXXXXXX This is a prototype!!!  It will change in the future!!! XXXXX#
+name:         XML-SAX-Writer
+version:      0.50
+version_from: Writer.pm
+installdirs:  site
+requires:
+    Test::More:                    0.40
+    Text::Iconv:                   1.2
+    XML::Filter::BufferText:       1.00
+    XML::NamespaceSupport:         1.00
+    XML::SAX::Exception:           1.01
+
+distribution_type: module
+generated_by: ExtUtils::MakeMaker version 6.17

@@ -9,6 +9,10 @@ use strict;
 use Test::More tests => 27;
 BEGIN { use_ok('XML::SAX::Writer'); }
 
+# VMS has different names for codepages
+my $isoL1 = ($^O eq 'VMS') ? 'iso8859-1' : 'iso-8859-1';
+my $isoL2 = ($^O eq 'VMS') ? 'iso8859-2' : 'iso-8859-2';
+
 
 # default options of XML::SAX::Writer
 my $w1 = XML::SAX::Writer->new->{Handler};
@@ -23,14 +27,14 @@ is_deeply( $w1->{Escape},  \%XML::SAX::Writer::DEFAULT_ESCAPE, 'default Escape')
 my %fmt2 = ( FooBar => 1 );
 my $o2 = \'';
 my $w2 = XML::SAX::Writer->new({
-                                EncodeFrom  => 'iso-8859-1',
-                                EncodeTo    => 'iso-8859-2',
+                                EncodeFrom  => $isoL1,
+                                EncodeTo    => $isoL2,
                                 Output      => $o2,
                                 Format      => \%fmt2,
                                 Escape      => {},
                               })->{Handler};
-ok(        $w2->{EncodeFrom} eq 'iso-8859-1', 'set EncodeFrom');
-ok(        $w2->{EncodeTo}   eq 'iso-8859-2', 'set EncodeTo');
+ok(        $w2->{EncodeFrom} eq $isoL1, 'set EncodeFrom');
+ok(        $w2->{EncodeTo}   eq $isoL2, 'set EncodeTo');
 ok(        "$w2->{Output}"   eq  "$o2",       'set Output');
 is_deeply( $w2->{Format},   \%fmt2,           'set Format');
 is_deeply( $w2->{Escape},   {},               'set Escape');
@@ -46,9 +50,11 @@ ok(@{$w1->{NSDecl}} == 0,                                  'ns stack is clear');
 isa_ok($w1->{Consumer}, 'XML::SAX::Writer::ConsumerInterface', 'consumer is set');
 
 # different inits (mostly for Consumer DWIM)
-$w1->{EncodeFrom} = 'iso-8859-1';
+$w1->{EncodeFrom} = $isoL1;
 $w1->start_document;
-isa_ok($w1->{Encoder}, 'Text::Iconv', 'iconv converter for real encoding');
+my $iconv_class = 'Text::Iconv';
+$iconv_class .= 'Ptr' if ($Text::Iconv::VERSION >= 1.3);
+isa_ok($w1->{Encoder}, $iconv_class, 'iconv converter for real encoding');
 
 $w1->{Output} = 'test_file_for_output';
 $w1->start_document;
@@ -76,7 +82,6 @@ $w1->{Output} = bless [], 'Test__XSW2';
 eval { $w1->start_document; };
 ok($@, 'bad consumer');
 isa_ok($@, 'XML::SAX::Writer::Exception', 'bad consumer exception');
-
 
 # escaping
 my $esc1 = '<>&"\'';

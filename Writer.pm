@@ -1,4 +1,3 @@
-
 ###
 # XML::SAX::Writer - SAX2 XML Writer
 # Robin Berjon <robin@knowscape.com>
@@ -13,7 +12,7 @@ use XML::Filter::BufferText qw();
 @XML::SAX::Writer::Exception::ISA = qw(XML::SAX::Exception);
 
 use vars qw($VERSION %DEFAULT_ESCAPE %COMMENT_ESCAPE);
-$VERSION = '0.44';
+$VERSION = '0.50';
 
 %DEFAULT_ESCAPE = (
                     '&'     => '&amp;',
@@ -164,6 +163,22 @@ sub escapeComment {
 }
 #-------------------------------------------------------------------#
 
+#-------------------------------------------------------------------#
+# convert and checking the return value
+#-------------------------------------------------------------------#
+sub safeConvert {
+    my $self = shift;
+    my $str = shift;
+
+    my $out = $self->{Encoder}->convert($str);
+    
+    if (!defined $out and defined $str) {
+	warn "Conversion error returned by Encoder [$self->{Encoder}], string: '$str'";
+	$out = '_LOST_DATA_';
+    }
+    return $out;
+}
+#-------------------------------------------------------------------#
 
 
 #,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,#
@@ -649,9 +664,9 @@ Robin Berjon, robin@knowscape.com
 
 =head1 COPYRIGHT
 
-Copyright (c) 2001,2002 Robin Berjon. All rights reserved. This program is
-free software; you can redistribute it and/or modify it under the same
-terms as Perl itself.
+Copyright (c) 2001-2006 Robin Berjon nad Perl XML project. All rights reserved. 
+This program is free software; you can redistribute it and/or modify it under 
+the same terms as Perl itself.
 
 =head1 SEE ALSO
 
