@@ -1,15 +1,25 @@
-# http://module-build.sourceforge.net/META-spec.html
-#XXXXXXX This is a prototype!!!  It will change in the future!!! XXXXX#
-name:         XML-SAX-Writer
-version:      0.50
-version_from: Writer.pm
-installdirs:  site
-requires:
-    Test::More:                    0.40
-    Text::Iconv:                   1.2
-    XML::Filter::BufferText:       1.00
-    XML::NamespaceSupport:         1.00
-    XML::SAX::Exception:           1.01
-
+---
+abstract: 'SAX2 Writer'
+author:
+  - 'Robin Berjon, robin@knowscape.com'
+build_requires:
+  Test::More: 0.40
 distribution_type: module
-generated_by: ExtUtils::MakeMaker version 6.17
+generated_by: 'Module::Install version 0.77'
+license: perl
+meta-spec:
+  url: http://module-build.sourceforge.net/META-spec-v1.4.html
+  version: 1.4
+name: XML-SAX-Writer
+no_index:
+  directory:
+    - inc
+    - t
+requires:
+  Text::Iconv: 1.2
+  XML::Filter::BufferText: 1.00
+  XML::NamespaceSupport: 1.00
+  XML::SAX::Exception: 1.01
+resources:
+  license: http://dev.perl.org/licenses/
+version: 0.50
