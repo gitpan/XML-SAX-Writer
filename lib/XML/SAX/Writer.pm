@@ -5,14 +5,15 @@
 
 package XML::SAX::Writer;
 use strict;
+use vars qw($VERSION %DEFAULT_ESCAPE %COMMENT_ESCAPE);
+$VERSION = '0.51';
+
 use Text::Iconv             qw();
 use XML::SAX::Exception     qw();
 use XML::SAX::Writer::XML   qw();
 use XML::Filter::BufferText qw();
 @XML::SAX::Writer::Exception::ISA = qw(XML::SAX::Exception);
 
-use vars qw($VERSION %DEFAULT_ESCAPE %COMMENT_ESCAPE);
-$VERSION = '0.50';
 
 %DEFAULT_ESCAPE = (
                     '&'     => '&amp;',
