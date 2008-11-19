@@ -6,7 +6,7 @@
 package XML::SAX::Writer;
 use strict;
 use vars qw($VERSION %DEFAULT_ESCAPE %COMMENT_ESCAPE);
-$VERSION = '0.51';
+$VERSION = '0.52';
 
 use Text::Iconv             qw();
 use XML::SAX::Exception     qw();
@@ -43,7 +43,7 @@ sub new {
     $opt->{EncodeTo}        ||= 'utf-8';
     $opt->{Format}          ||= {}; # needs options w/ defaults, we'll see later
     $opt->{Output}          ||= *{STDOUT}{IO};
-    $opt->{QuoteCharecter}  ||= q['];
+    $opt->{QuoteCharacter}  ||= q['];
     
     eval "use $opt->{Writer};";
 
@@ -462,9 +462,9 @@ This defaults to UTF-8, which works for US-ASCII as well.
 The character set encoding in which output should be encoded.  Again,
 this defaults to UTF-8.
 
-=item -- QuoteCharecter
+=item -- QuoteCharacter
 
-Set the charecter used to quote attributes. This defaults to single quotes (') 
+Set the character used to quote attributes. This defaults to single quotes (') 
 for backwards compatiblity.
 
 =back

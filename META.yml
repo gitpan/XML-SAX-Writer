@@ -22,4 +22,4 @@ requires:
   XML::SAX::Exception: 1.01
 resources:
   license: http://dev.perl.org/licenses/
-version: 0.51
+version: 0.52
