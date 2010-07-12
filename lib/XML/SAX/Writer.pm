@@ -6,9 +6,9 @@
 package XML::SAX::Writer;
 use strict;
 use vars qw($VERSION %DEFAULT_ESCAPE %COMMENT_ESCAPE);
-$VERSION = '0.52';
+$VERSION = '0.53';
 
-use Text::Iconv             qw();
+use Encode                  qw();
 use XML::SAX::Exception     qw();
 use XML::SAX::Writer::XML   qw();
 use XML::Filter::BufferText qw();
@@ -70,7 +70,7 @@ sub setConverter {
     my $self = shift;
 
     if (lc($self->{EncodeFrom}) ne lc($self->{EncodeTo})) {
-        $self->{Encoder} = Text::Iconv->new($self->{EncodeFrom}, $self->{EncodeTo});
+        $self->{Encoder} = XML::SAX::Writer::Encode->new($self->{EncodeFrom}, $self->{EncodeTo});
     }
     else {
         $self->{Encoder} = XML::SAX::Writer::NullConverter->new;
@@ -365,6 +365,29 @@ sub new     { return bless [], __PACKAGE__ }
 sub convert { $_[1] }
 
 
+#,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,#
+#`,`, Encode Converter ,`,`,`,`,`,`,`,`,`,`,`,`,`,`,`,`,`,`,`,`,`,`,#
+#```````````````````````````````````````````````````````````````````#
+
+package XML::SAX::Writer::Encode;
+sub new {
+    my $class = shift;
+    my $self = {
+        from_enc => shift,
+        to_enc => shift,
+    };
+    return bless $self, $class;
+}
+sub convert {
+    my $self = shift;
+    my $data = shift;
+    eval {
+        Encode::from_to( $data, $self->{from_enc}, $self->{to_enc}, Encode::FB_CROAK );
+    };
+    return $@ ? undef : $data;
+};
+
+
 1;
 #,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,#
 #`,`, Documentation `,`,`,`,`,`,`,`,`,`,`,`,`,`,`,`,`,`,`,`,`,`,`,`,#
@@ -638,13 +661,6 @@ than those that apply to regular content.
     - test, test, test (and then some tests)
 
     - doc, doc, doc (actually this part is in better shape)
-
-    - add support for Perl 5.7's Encode module so that we can use it
-    instead of Text::Iconv. Encode is more complete and likely to be
-    better supported overall. This will be done using a pluggable
-    encoder (so that users can provide their own if they want to)
-    and detecter both in Makefile.PL requirements and in the module
-    at runtime.
 
     - remove the xml_decl and replace it with intelligent logic, as
     discussed on perl-xml

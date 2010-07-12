@@ -3,9 +3,12 @@ abstract: 'SAX2 Writer'
 author:
   - 'Robin Berjon, robin@knowscape.com'
 build_requires:
+  ExtUtils::MakeMaker: 6.42
   Test::More: 0.40
+configure_requires:
+  ExtUtils::MakeMaker: 6.42
 distribution_type: module
-generated_by: 'Module::Install version 0.77'
+generated_by: 'Module::Install version 1.00'
 license: perl
 meta-spec:
   url: http://module-build.sourceforge.net/META-spec-v1.4.html
@@ -16,10 +19,11 @@ no_index:
     - inc
     - t
 requires:
-  Text::Iconv: 1.2
+  Encode: 2.12
   XML::Filter::BufferText: 1.00
   XML::NamespaceSupport: 1.00
   XML::SAX::Exception: 1.01
 resources:
   license: http://dev.perl.org/licenses/
-version: 0.52
+  repository: origin
+version: 0.53
