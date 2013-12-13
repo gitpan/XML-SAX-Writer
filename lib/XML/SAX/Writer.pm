@@ -1,12 +1,9 @@
-###
-# XML::SAX::Writer - SAX2 XML Writer
-# Robin Berjon <robin@knowscape.com>
-###
-
 package XML::SAX::Writer;
 use strict;
 use vars qw($VERSION %DEFAULT_ESCAPE %COMMENT_ESCAPE);
 $VERSION = '0.53';
+
+# ABSTRACT: SAX2 XML Writer
 
 use Encode                  qw();
 use XML::SAX::Exception     qw();
@@ -149,7 +146,7 @@ sub escape {
     my $self = shift;
     my $str  = shift;
 
-    $str =~ s/($self->{EscaperRegex})/$self->{Escape}->{$1}/oge;
+    $str =~ s/($self->{EscaperRegex})/$self->{Escape}->{$1}/ge;
     return $str;
 }
 #-------------------------------------------------------------------#
@@ -161,7 +158,7 @@ sub escapeComment {
     my $self = shift;
     my $str  = shift;
 
-    $str =~ s/($self->{CommentEscaperRegex})/$self->{CommentEscape}->{$1}/oge;
+    $str =~ s/($self->{CommentEscaperRegex})/$self->{CommentEscape}->{$1}/ge;
     return $str;
 }
 #-------------------------------------------------------------------#
@@ -389,15 +386,18 @@ sub convert {
 
 
 1;
-#,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,#
-#`,`, Documentation `,`,`,`,`,`,`,`,`,`,`,`,`,`,`,`,`,`,`,`,`,`,`,`,#
-#```````````````````````````````````````````````````````````````````#
 
 =pod
 
+=encoding UTF-8
+
 =head1 NAME
 
-XML::SAX::Writer - SAX2 Writer
+XML::SAX::Writer - SAX2 XML Writer
+
+=head1 VERSION
+
+version 0.54
 
 =head1 SYNOPSIS
 
@@ -410,7 +410,6 @@ XML::SAX::Writer - SAX2 Writer
   $d->parse('some options...');
 
 =head1 DESCRIPTION
-
 
 =head2 Why yet another XML Writer ?
 
@@ -437,16 +436,16 @@ way as it helps keep SAX1 and SAX2 separated.
 
 =item * new(%hash)
 
-This is the constructor for this object.  It takes a number of
+This is the constructor for this object. It takes a number of
 parameters, all of which are optional.
 
-=item -- Output
+=item * Output
 
-This parameter can be one of several things.  If it is a simple
+This parameter can be one of several things. If it is a simple
 scalar, it is interpreted as a filename which will be opened for
-writing.  If it is a scalar reference, output will be appended to this
-scalar.  If it is an array reference, output will be pushed onto this
-array as it is generated.  If it is a filehandle, then output will be
+writing. If it is a scalar reference, output will be appended to this
+scalar. If it is an array reference, output will be pushed onto this
+array as it is generated. If it is a filehandle, then output will be
 sent to this filehandle.
 
 Finally, it is possible to pass an object for this parameter, in which
@@ -456,11 +455,11 @@ INTERFACE>.
 
 If this parameter is not provided, then output is sent to STDOUT.
 
-=item -- Escape
+=item * Escape
 
 This should be a hash reference where the keys are characters
 sequences that should be escaped and the values are the escaped form
-of the sequence.  By default, this module will escape the ampersand
+of the sequence. By default, this module will escape the ampersand
 (&), less than (<), greater than (>), double quote ("), and apostrophe
 ('). Note that some browsers don't support the &apos; escape used for
 apostrophes so that you should be careful when outputting XHTML.
@@ -468,27 +467,27 @@ apostrophes so that you should be careful when outputting XHTML.
 If you only want to add entries to the Escape hash, you can first
 copy the contents of %XML::SAX::Writer::DEFAULT_ESCAPE.
 
-=item -- CommentEscape
+=item * CommentEscape
 
 Comment content often needs to be escaped differently from other
 content. This option works exactly as the previous one except that
 by default it only escapes the double dash (--) and that the contents
 can be copied from %XML::SAX::Writer::COMMENT_ESCAPE.
 
-=item -- EncodeFrom
+=item * EncodeFrom
 
 The character set encoding in which incoming data will be provided.
 This defaults to UTF-8, which works for US-ASCII as well.
 
-=item -- EncodeTo
+=item * EncodeTo
 
-The character set encoding in which output should be encoded.  Again,
+The character set encoding in which output should be encoded. Again,
 this defaults to UTF-8.
 
-=item -- QuoteCharacter
+=item * QuoteCharacter
 
 Set the character used to quote attributes. This defaults to single quotes (') 
-for backwards compatiblity.
+for backwards compatibility.
 
 =back
 
@@ -499,7 +498,7 @@ in charge of writing out what is formatted by this module. Setting a
 Consumer is done by setting the Output option to the object of your
 choice instead of to an array, scalar, or file handle as is more
 commonly done (internally those in fact map to Consumer classes and
-and simply available as options for your convienience).
+and simply available as options for your convenience).
 
 If you don't understand this, don't worry. You don't need it most of
 the time.
@@ -564,7 +563,7 @@ reference to that data member.
         return $$self;
     }
 
-And here's one way to use it:
+And here is one way to use it:
 
     my $c = MyConsumer->new;
     my $w = XML::SAX::Writer->new( Output => $c );
@@ -588,10 +587,9 @@ and access it like:
 =head1 THE ENCODER INTERFACE
 
 Encoders can be plugged in to allow one to use one's favourite encoder
-object. Presently there are two encoders: Iconv and NullEncoder, and
-one based on C<Encode> ought to be out soon. They need to implement
-two methods, and may inherit from XML::SAX::Writer::NullConverter if
-they wish to
+object. Presently there are two encoders: Encode and NullEncoder. They
+need to implement two methods, and may inherit from
+XML::SAX::Writer::NullConverter if they wish to
 
 =over 4
 
@@ -605,6 +603,11 @@ Converts that string and returns it.
 
 =back
 
+Note that the return value of the convert method is B<not> checked. Output may
+be truncated if a character couldn't be converted correctly. To avoid problems
+the encoder should take care encoding errors itself, for example by raising an
+exception.
+
 =head1 CUSTOM OUTPUT
 
 This module is generally used to write XML -- which it does most of the
@@ -613,7 +616,7 @@ framework to output data, the opposite of a non-XML SAX parser.
 
 Of course there's only so much that one can abstract, so depending on
 your format this may or may not be useful. If it is, you'll need to
-know the followin API (and probably to have a look inside
+know the following API (and probably to have a look inside
 C<XML::SAX::Writer::XML>, the default Writer).
 
 =over
@@ -627,17 +630,17 @@ some initialisation if it needs it.
 
 This is used to set the proper converter for character encodings. The
 default implementation should suffice but you can override it. It must
-set C<$self->{Encoder}> to an Encoder object. Subclasses *should* call
+set C<< $self->{Encoder} >> to an Encoder object. Subclasses *should* call
 it.
 
 =item setConsumer
 
 Same as above, except that it is for the Consumer object, and that it
-must set C<$self->{Consumer}>.
+must set C<< $self->{Consumer} >>.
 
 =item setEscaperRegex
 
-Will initialise the escaping regex C<$self->{EscaperRegex}> based on
+Will initialise the escaping regex C<< $self->{EscaperRegex} >> based on
 what is needed.
 
 =item escape STRING
@@ -677,19 +680,36 @@ Slaymaker for the Consumer pattern idea, the coderef output option and
 miscellaneous bugfixes and performance tweaks. Of course the usual
 suspects (Kip Hampton and Matt Sergeant) helped in the usual ways.
 
-=head1 AUTHOR
-
-Robin Berjon, robin@knowscape.com
-
-=head1 COPYRIGHT
-
-Copyright (c) 2001-2006 Robin Berjon and Perl XML project. Some rights reserved. 
-This program is free software; you can redistribute it and/or modify it under 
-the same terms as Perl itself.
-
 =head1 SEE ALSO
 
 XML::SAX::*
 
+=head1 AUTHORS
+
+=over 4
+
+=item *
+
+Robin Berjon <robin@knowscape.com>
+
+=item *
+
+Chris Prather <chris@prather.org>
+
+=back
+
+=head1 COPYRIGHT AND LICENSE
+
+This software is copyright (c) 2013 by Robin Berjon.
+
+This is free software; you can redistribute it and/or modify it under
+the same terms as the Perl 5 programming language system itself.
+
 =cut
+
+__END__
+#,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,#
+#`,`, Documentation `,`,`,`,`,`,`,`,`,`,`,`,`,`,`,`,`,`,`,`,`,`,`,`,#
+#```````````````````````````````````````````````````````````````````#
+
 

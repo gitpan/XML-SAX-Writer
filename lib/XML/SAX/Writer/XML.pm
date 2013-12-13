@@ -4,6 +4,9 @@
 ###
 
 package XML::SAX::Writer::XML;
+{
+  $XML::SAX::Writer::XML::VERSION = '0.54';
+}
 use strict;
 use XML::NamespaceSupport   qw();
 @XML::SAX::Writer::XML::ISA = qw(XML::SAX::Writer);
@@ -443,9 +446,9 @@ sub start_entity {
     my $ent;
     if ($data->{Name} eq '[dtd]') {
         # we ignore the fact that we're dealing with an external
-        # DTD entity here, and prolly shouldn't write the DTD
+        # DTD entity here, and probably shouldn't write the DTD
         # events unless explicitly told to
-        # this will prolly change
+        # this will probably change
     }
     elsif ($data->{Name} =~ m/^%/) {
         $ent = $data->{Name} . ';';
@@ -536,11 +539,19 @@ sub _output_dtd {
 #`,`, Documentation `,`,`,`,`,`,`,`,`,`,`,`,`,`,`,`,`,`,`,`,`,`,`,`,#
 #```````````````````````````````````````````````````````````````````#
 
+__END__
+
 =pod
+
+=encoding UTF-8
 
 =head1 NAME
 
-XML::SAX::Writer::XML - SAX2 XML Writer
+XML::SAX::Writer::XML
+
+=head1 VERSION
+
+version 0.54
 
 =head1 SYNOPSIS
 
@@ -550,13 +561,17 @@ XML::SAX::Writer::XML - SAX2 XML Writer
 
 ...
 
+=head1 NAME
+
+XML::SAX::Writer::XML - SAX2 XML Writer
+
 =head1 AUTHOR
 
 Robin Berjon, robin@knowscape.com
 
 =head1 COPYRIGHT
 
-Copyright (c) 2001-2006 Robin Berjon nad Perl XML project. All rights reserved. 
+Copyright (c) 2001-2006 Robin Berjon and Perl XML project. All rights reserved. 
 This program is free software; you can redistribute it and/or modify it under 
 the same terms as Perl itself.
 
@@ -564,5 +579,25 @@ the same terms as Perl itself.
 
 XML::SAX::*
 
-=cut
+=head1 AUTHORS
 
+=over 4
+
+=item *
+
+Robin Berjon <robin@knowscape.com>
+
+=item *
+
+Chris Prather <chris@prather.org>
+
+=back
+
+=head1 COPYRIGHT AND LICENSE
+
+This software is copyright (c) 2013 by Robin Berjon.
+
+This is free software; you can redistribute it and/or modify it under
+the same terms as the Perl 5 programming language system itself.
+
+=cut
