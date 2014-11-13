@@ -1,20 +1,15 @@
-###
-# XML::SAX::Writer - SAX2 XML Writer
-# Robin Berjon <robin@knowscape.com>
-###
-
 package XML::SAX::Writer::XML;
-{
-  $XML::SAX::Writer::XML::VERSION = '0.54';
-}
+$XML::SAX::Writer::XML::VERSION = '0.55';
 use strict;
 use XML::NamespaceSupport   qw();
 @XML::SAX::Writer::XML::ISA = qw(XML::SAX::Writer);
 
+# ABSTRACT: XML::SAX::Writer's SAX Handler
 
-#,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,#
-#`,`, The SAX Handler `,`,`,`,`,`,`,`,`,`,`,`,`,`,`,`,`,`,`,`,`,`,`,#
-#```````````````````````````````````````````````````````````````````#
+###
+# Robin Berjon <robin@knowscape.com>
+###
+
 
 #-------------------------------------------------------------------#
 # start_document
@@ -547,11 +542,11 @@ __END__
 
 =head1 NAME
 
-XML::SAX::Writer::XML
+XML::SAX::Writer::XML - XML::SAX::Writer's SAX Handler
 
 =head1 VERSION
 
-version 0.54
+version 0.55
 
 =head1 SYNOPSIS
 
@@ -595,7 +590,7 @@ Chris Prather <chris@prather.org>
 
 =head1 COPYRIGHT AND LICENSE
 
-This software is copyright (c) 2013 by Robin Berjon.
+This software is copyright (c) 2014 by Robin Berjon.
 
 This is free software; you can redistribute it and/or modify it under
 the same terms as the Perl 5 programming language system itself.

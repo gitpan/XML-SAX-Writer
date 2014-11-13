@@ -36,12 +36,12 @@ sub new {
     $opt->{Writer}          ||= 'XML::SAX::Writer::XML';
     $opt->{Escape}          ||= \%DEFAULT_ESCAPE;
     $opt->{CommentEscape}   ||= \%COMMENT_ESCAPE;
-    $opt->{EncodeFrom}      ||= 'utf-8';
-    $opt->{EncodeTo}        ||= 'utf-8';
+    $opt->{EncodeFrom}        = exists $opt->{EncodeFrom} ? $opt->{EncodeFrom} : 'utf-8';
+    $opt->{EncodeTo}          = exists $opt->{EncodeTo}   ? $opt->{EncodeTo}   : 'utf-8';
     $opt->{Format}          ||= {}; # needs options w/ defaults, we'll see later
     $opt->{Output}          ||= *{STDOUT}{IO};
     $opt->{QuoteCharacter}  ||= q['];
-    
+
     eval "use $opt->{Writer};";
 
     my $obj = bless $opt, $opt->{Writer};
@@ -171,10 +171,10 @@ sub safeConvert {
     my $str = shift;
 
     my $out = $self->{Encoder}->convert($str);
-    
-    if (!defined $out and defined $str) {
-	warn "Conversion error returned by Encoder [$self->{Encoder}], string: '$str'";
-	$out = '_LOST_DATA_';
+
+    if (!defined $out && defined $str) {
+        warn "Conversion error returned by Encoder [$self->{Encoder}], string: '$str'";
+        $out = '_LOST_DATA_';
     }
     return $out;
 }
@@ -368,20 +368,24 @@ sub convert { $_[1] }
 
 package XML::SAX::Writer::Encode;
 sub new {
-    my $class = shift;
+    my ($class, $from, $to) = @_;
     my $self = {
-        from_enc => shift,
-        to_enc => shift,
+        from_enc => $from,
+        to_enc   => $to,
     };
     return bless $self, $class;
 }
 sub convert {
-    my $self = shift;
-    my $data = shift;
+    my ($self, $data) = @_;
     eval {
-        Encode::from_to( $data, $self->{from_enc}, $self->{to_enc}, Encode::FB_CROAK );
+        $data = Encode::decode($self->{from_enc}, $data) if $self->{from_enc};
+        $data = Encode::encode($self->{to_enc}, $data, Encode::FB_CROAK) if $self->{to_enc};
     };
-    return $@ ? undef : $data;
+    if ($@) {
+        warn $@;
+        return;
+    }
+    return $data;
 };
 
 
@@ -397,7 +401,7 @@ XML::SAX::Writer - SAX2 XML Writer
 
 =head1 VERSION
 
-version 0.54
+version 0.55
 
 =head1 SYNOPSIS
 
@@ -479,10 +483,14 @@ can be copied from %XML::SAX::Writer::COMMENT_ESCAPE.
 The character set encoding in which incoming data will be provided.
 This defaults to UTF-8, which works for US-ASCII as well.
 
+Set this to C<undef> if you do not wish to decode your data.
+
 =item * EncodeTo
 
 The character set encoding in which output should be encoded. Again,
 this defaults to UTF-8.
+
+Set this to C<undef> if you do not with to encode your data.
 
 =item * QuoteCharacter
 
@@ -700,7 +708,7 @@ Chris Prather <chris@prather.org>
 
 =head1 COPYRIGHT AND LICENSE
 
-This software is copyright (c) 2013 by Robin Berjon.
+This software is copyright (c) 2014 by Robin Berjon.
 
 This is free software; you can redistribute it and/or modify it under
 the same terms as the Perl 5 programming language system itself.
