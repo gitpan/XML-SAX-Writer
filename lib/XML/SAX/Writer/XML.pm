@@ -1,5 +1,5 @@
 package XML::SAX::Writer::XML;
-$XML::SAX::Writer::XML::VERSION = '0.55';
+$XML::SAX::Writer::XML::VERSION = '0.56';
 use strict;
 use XML::NamespaceSupport   qw();
 @XML::SAX::Writer::XML::ISA = qw(XML::SAX::Writer);
@@ -546,7 +546,7 @@ XML::SAX::Writer::XML - XML::SAX::Writer's SAX Handler
 
 =head1 VERSION
 
-version 0.55
+version 0.56
 
 =head1 SYNOPSIS
 

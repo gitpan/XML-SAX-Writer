@@ -25,4 +25,4 @@ requires:
 resources:
   homepage: https://github.com/perigrin/xml-sax-writer
   repository: https://github.com/perigrin/xml-sax-writer.git
-version: '0.55'
+version: '0.56'

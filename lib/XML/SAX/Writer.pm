@@ -1,7 +1,7 @@
 package XML::SAX::Writer;
+$XML::SAX::Writer::VERSION = '0.56';
 use strict;
-use vars qw($VERSION %DEFAULT_ESCAPE %COMMENT_ESCAPE);
-$VERSION = '0.53';
+use vars qw(%DEFAULT_ESCAPE %COMMENT_ESCAPE);
 
 # ABSTRACT: SAX2 XML Writer
 
@@ -189,7 +189,7 @@ sub safeConvert {
 # new methods are added to the interface
 
 package XML::SAX::Writer::ConsumerInterface;
-
+$XML::SAX::Writer::ConsumerInterface::VERSION = '0.56';
 sub new {
     my $class = shift;
     my $ref = shift;
@@ -207,6 +207,7 @@ sub finalize {}
 #```````````````````````````````````````````````````````````````````#
 
 package XML::SAX::Writer::StringConsumer;
+$XML::SAX::Writer::StringConsumer::VERSION = '0.56';
 @XML::SAX::Writer::StringConsumer::ISA = qw(XML::SAX::Writer::ConsumerInterface);
 
 #-------------------------------------------------------------------#
@@ -236,6 +237,7 @@ sub finalize { ${$_[0]} }
 #```````````````````````````````````````````````````````````````````#
 
 package XML::SAX::Writer::CodeConsumer;
+$XML::SAX::Writer::CodeConsumer::VERSION = '0.56';
 @XML::SAX::Writer::CodeConsumer::ISA = qw(XML::SAX::Writer::ConsumerInterface );
 
 #-------------------------------------------------------------------#
@@ -266,6 +268,7 @@ sub finalize { ${$_[0]}->('end_document', '') }
 #```````````````````````````````````````````````````````````````````#
 
 package XML::SAX::Writer::ArrayConsumer;
+$XML::SAX::Writer::ArrayConsumer::VERSION = '0.56';
 @XML::SAX::Writer::ArrayConsumer::ISA = qw(XML::SAX::Writer::ConsumerInterface);
 
 #-------------------------------------------------------------------#
@@ -296,6 +299,7 @@ sub finalize { return ${$_[0]} }
 #```````````````````````````````````````````````````````````````````#
 
 package XML::SAX::Writer::HandleConsumer;
+$XML::SAX::Writer::HandleConsumer::VERSION = '0.56';
 @XML::SAX::Writer::HandleConsumer::ISA = qw(XML::SAX::Writer::ConsumerInterface);
 
 #-------------------------------------------------------------------#
@@ -321,6 +325,7 @@ sub finalize { return 0 }
 #```````````````````````````````````````````````````````````````````#
 
 package XML::SAX::Writer::FileConsumer;
+$XML::SAX::Writer::FileConsumer::VERSION = '0.56';
 @XML::SAX::Writer::FileConsumer::ISA = qw(XML::SAX::Writer::HandleConsumer);
 
 #-------------------------------------------------------------------#
@@ -358,6 +363,7 @@ sub finalize {
 #```````````````````````````````````````````````````````````````````#
 
 package XML::SAX::Writer::NullConverter;
+$XML::SAX::Writer::NullConverter::VERSION = '0.56';
 sub new     { return bless [], __PACKAGE__ }
 sub convert { $_[1] }
 
@@ -367,6 +373,7 @@ sub convert { $_[1] }
 #```````````````````````````````````````````````````````````````````#
 
 package XML::SAX::Writer::Encode;
+$XML::SAX::Writer::Encode::VERSION = '0.56';
 sub new {
     my ($class, $from, $to) = @_;
     my $self = {
@@ -401,7 +408,7 @@ XML::SAX::Writer - SAX2 XML Writer
 
 =head1 VERSION
 
-version 0.55
+version 0.56
 
 =head1 SYNOPSIS
 
